@@ -1,7 +1,7 @@
 <template>
     <button class="homepageButton" style="background-color: #4CAF50;">Start to detect current email</button>
     <button class="homepageButton" style="background-color: #FF9800;">Encrypt the whole email</button>
-    <ThreatsShowBox />
+    <ThreatsList />
 </template>
 
 <style scoped>
@@ -25,5 +25,5 @@
 </style>
 
 <script setup>
-    import ThreatsShowBox from "../components/ThreatsShowBox.vue"
+    import ThreatsList from "../components/ThreatsList.vue"
 </script>

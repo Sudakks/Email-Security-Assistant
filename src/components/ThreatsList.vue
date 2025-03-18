@@ -1,0 +1,32 @@
+<script setup>
+    import { defineProps, defineEmits, ref } from 'vue';
+    import ThreatItem from "./ThreatItem.vue";
+
+
+
+    const ThreatsList = ref([
+        { id: 1, threatPriority: "high", attribute: "ID Number Detected", content: "389568xxxx93858" },
+        { id: 2, threatPriority: "medium", attribute: "Email Exposed", content: "example@email.com" },
+        { id: 3, threatPriority: "low", attribute: "Weak Password", content: "password123" }
+    ]);
+
+    const removeItem = (id) => {
+        ThreatsList.value = ThreatsList.value.filter(item => item.id !== id);
+    }
+    const threatsNum = ref(ThreatsList.value.length);
+</script>
+
+<template>
+    <span class="prompt-text">
+        Find {{threatsNum}} possible sensitive information
+    </span>
+    <div>
+        <ThreatItem v-for="item in ThreatsList"
+                    :key="item.id"
+                    :id="item.id"
+                    :threatPriority="item.threatPriority"
+                    :attribute="item.attribute"
+                    :content="item.content"
+                    @remove="removeItem" />
+    </div>
+</template>
