@@ -2,6 +2,11 @@
     <button class="homepageButton" style="background-color: #4CAF50;">Start to detect current email</button>
     <button class="homepageButton" style="background-color: #FF9800;">Encrypt the whole email</button>
     <ThreatsList />
+    <v-expansion-panels>
+        <v-expansion-panel title="Title"
+                           text="Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi, ratione debitis quis est labore voluptatibus! Eaque cupiditate minima">
+        </v-expansion-panel>
+    </v-expansion-panels>
 </template>
 
 <style scoped>

@@ -29,4 +29,5 @@
                     :content="item.content"
                     @remove="removeItem" />
     </div>
+
 </template>
