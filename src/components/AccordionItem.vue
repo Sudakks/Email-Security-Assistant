@@ -6,7 +6,7 @@
         title: String,
         modelValue: Boolean //用于接收父组件传递的v-model，即是否折叠
     });
-    const emit = defineEmits(['update: modelValue']);
+    const emit = defineEmits(['update: modelValue']);//通知父组件切换状态
 
     const togglePanel = () => {
         emit('update:modelValue', !props.modelValue);
