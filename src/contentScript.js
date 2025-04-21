@@ -1,16 +1,24 @@
-/* Ò»Ö±ÒÔÀ´µÄÎÊÌâ£ºÒòÎªÕâ¸öÒ³ÃæÒÑ¾­¼ÓÔØÍêÁË,
-Ëü²¢Ã»ÓÐ±»×¢Èë½Å±¾, ÐèÒªË¢ÐÂÒ³Ãæ
-Ê¹½Å±¾×¢Èëµ½Ò³ÃæÖÐ, È»ºó²Å¿ÉÒÔ·¢ËÍÏûÏ¢ */
-//alert("Content script loaded!");
-// src/contentScript.js
+ï»¿/* ä¸€ç›´ä»¥æ¥çš„é—®é¢˜ï¼šå› ä¸ºè¿™ä¸ªé¡µé¢å·²ç»åŠ è½½å®Œäº†,
+å®ƒå¹¶æ²¡æœ‰è¢«æ³¨å…¥è„šæœ¬, éœ€è¦åˆ·æ–°é¡µé¢
+ä½¿è„šæœ¬æ³¨å…¥åˆ°é¡µé¢ä¸­, ç„¶åŽæ‰å¯ä»¥å‘é€æ¶ˆæ¯ */
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startDetection') {
-        // ÌáÈ¡Ò³Ãæ´¿ÎÄ±¾
         const bodyText = document.body.innerText;
 
-        console.log('[Email Assistant] html text£º', bodyText);
+        const keywords = request.keywords || [];
+        const matched = [];
 
-        // Èç¹ûÐèÒª°Ñ½á¹û·µ»Ø¸ø popup Ò³Ãæ
-        sendResponse({ text: bodyText });
+        for (const word of keywords) {
+            const regex = new RegExp(`${word}`, 'gi');
+            const matches = bodyText.match(regex);
+            if (matches) {
+                matched.push({ keyword: word, count: matches.length });
+            }
+        }
+
+        sendResponse({ matched });
+
+        // âœ… å‘Šè¯‰ Chromeï¼šæˆ‘ä¼šå¼‚æ­¥è°ƒç”¨ sendResponse
+        return true;
     }
 });

@@ -35,6 +35,11 @@
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const tab = tabs[0];
+
+            const storedKeywords = localStorage.getItem('customKeywords');
+            const keywords = storedKeywords ? JSON.parse(storedKeywords) : [];
+
+
             chrome.scripting.executeScript(
                 {
                     target: { tabId: tab.id },
@@ -42,15 +47,13 @@
                 },
                 () => {
                     if (chrome.runtime.lastError) {
-                        console.error('Injection failed:', chrome.runtime.lastError.message);
+                        console.error('contentScript injection failed:', chrome.runtime.lastError.message);
                     } else {
-                        chrome.tabs.sendMessage(tab.id, { action: 'startDetection' }, (response) => {
+                        chrome.tabs.sendMessage(tab.id, { action: 'startDetection', keywords }, (response) => {
                             if (chrome.runtime.lastError) {
                                 console.error('Message error:', chrome.runtime.lastError.message);
                             } else {
-                                console.log('✅ the content is ：', response.text);
-                                // 你也可以用 alert 或绑定到 Vue 的 data 中展示
-                                alert(response.text);
+                                alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
                             }
                         });
                     }
