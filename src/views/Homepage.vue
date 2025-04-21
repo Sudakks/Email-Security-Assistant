@@ -1,5 +1,5 @@
 <template>
-    <button class="homepageButton" style="background-color: #4CAF50;">Start to detect current email</button>
+    <button class="homepageButton" style="background-color: #4CAF50;" @click="sendSignal">Start to detect current email</button>
     <button class="homepageButton" style="background-color: #FF9800;">Encrypt the whole email</button>
     <ThreatsList />
     <v-expansion-panels>
@@ -29,6 +29,20 @@
     }
 </style>
 
-<script setup>
+<script>
     import ThreatsList from "../components/ThreatsList.vue"
+
+    export default {
+        methods: {
+            sendSignal() {
+                chrome.runtime.sendMessage({ action: "detectEmail" }, (response) => {
+                    if (chrome.runtime.lastError) {
+                        alert("Error is " + chrome.runtime.lastError);
+                        return;
+                    }
+                    alert("Response: " + response);
+                });
+            }
+        }
+    }
 </script>
