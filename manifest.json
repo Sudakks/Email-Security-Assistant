@@ -1,5 +1,4 @@
 {
-  //一直搞错了，它读取的是public里面的manifest.json!!!!
   "name": "Email Security Assistant",
   "manifest_version": 3,
   "version": "1.0.0",
