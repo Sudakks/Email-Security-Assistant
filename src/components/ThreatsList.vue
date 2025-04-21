@@ -1,14 +1,29 @@
 <script setup>
-    import { defineProps, defineEmits, ref } from 'vue';
+    import { defineProps, defineEmits, ref, inject, watch } from 'vue';
     import ThreatItem from "./ThreatItem.vue";
 
 
-
-    const ThreatsList = ref([
+    
+    /*const ThreatsList = ref([
         { id: 1, threatPriority: "high", attribute: "ID Number Detected", content: "389568xxxx93858" },
         { id: 2, threatPriority: "medium", attribute: "Email Exposed", content: "example@email.com" },
         { id: 3, threatPriority: "low", attribute: "Weak Password", content: "password123" }
-    ]);
+    ]);*/
+
+    const ThreatsList = ref([]);
+    const detectedKeywords = inject('detectedKeywords', ref([]));
+
+    watch(detectedKeywords, (newKeywords) => {
+        ThreatsList.value = []; // Çå¿Õ¾ÉµÄ
+        newKeywords.forEach((item) => {
+            ThreatsList.value.push({
+                id: ThreatsList.value.length + 1,
+                threatPriority: "high",
+                attribute: "Customed Keywords Detected",
+                content: item.keyword
+            });
+        });
+    }, { immediate: true });
 
     const removeItem = (id) => {
         ThreatsList.value = ThreatsList.value.filter(item => item.id !== id);

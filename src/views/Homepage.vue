@@ -31,6 +31,10 @@
 
 <script setup>
     import ThreatsList from "../components/ThreatsList.vue"
+    import { provide, ref } from 'vue'
+
+    const detectedKeywords = ref([]);
+    provide("detectedKeywords", detectedKeywords); 
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -54,6 +58,7 @@
                                 console.error('Message error:', chrome.runtime.lastError.message);
                             } else {
                                 alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
+                                detectedKeywords.value = response.matched;
                             }
                         });
                     }

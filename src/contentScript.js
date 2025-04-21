@@ -18,7 +18,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         sendResponse({ matched });
 
-        // ✅ 告诉 Chrome：我会异步调用 sendResponse
         return true;
     }
 });
