@@ -1,4 +1,4 @@
-<template>
+ï»¿<template>
     <button class="homepageButton" style="background-color: #4CAF50;" @click="sendSignal">Start to detect current email</button>
     <button class="homepageButton" style="background-color: #FF9800;">Encrypt the whole email</button>
     <ThreatsList />
@@ -24,25 +24,38 @@
 
         display: block; 
         width: 94%; 
-        /*max-width: 400px;  ÏŞÖÆ×î´ó¿í¶È */
-        margin: 5px auto; /* ×óÓÒ×Ô¶¯¾ÓÖĞ */
+        /*max-width: 400px;  é™åˆ¶æœ€å¤§å®½åº¦ */
+        margin: 5px auto; /* å·¦å³è‡ªåŠ¨å±…ä¸­ */
     }
 </style>
 
-<script>
+<script setup>
     import ThreatsList from "../components/ThreatsList.vue"
 
-    export default {
-        methods: {
-            sendSignal() {
-                chrome.runtime.sendMessage({ action: "detectEmail" }, (response) => {
+    const sendSignal = () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const tab = tabs[0];
+            chrome.scripting.executeScript(
+                {
+                    target: { tabId: tab.id },
+                    files: ['contentScript.js']
+                },
+                () => {
                     if (chrome.runtime.lastError) {
-                        alert("Error is " + chrome.runtime.lastError);
-                        return;
+                        console.error('Injection failed:', chrome.runtime.lastError.message);
+                    } else {
+                        chrome.tabs.sendMessage(tab.id, { action: 'startDetection' }, (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error('Message error:', chrome.runtime.lastError.message);
+                            } else {
+                                console.log('âœ… the content is ï¼š', response.text);
+                                // ä½ ä¹Ÿå¯ä»¥ç”¨ alert æˆ–ç»‘å®šåˆ° Vue çš„ data ä¸­å±•ç¤º
+                                alert(response.text);
+                            }
+                        });
                     }
-                    alert("Response: " + response);
-                });
-            }
-        }
-    }
+                }
+            );
+        });
+    };
 </script>
