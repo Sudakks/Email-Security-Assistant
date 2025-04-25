@@ -34,11 +34,30 @@
     import { provide, ref } from 'vue'
 
     const detectedKeywords = ref([]);
-    provide("detectedKeywords", detectedKeywords); 
+    const saved = sessionStorage.getItem('matchedThreats');
+    if (saved) {
+        detectedKeywords.value = JSON.parse(saved);
+    }
+    provide("detectedKeywords", detectedKeywords);
+
+
+
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
             const tab = tabs[0];
+            const url = tab.url || '';
+            let hostname = '';
+            try {
+                hostname = new URL(url).hostname
+            } catch (e) {
+                alert("Error to catch hostname: " + hostname);
+            }
+
+            if (!hostname.endsWith('mail.google.com')) {
+                alert("⚠️Not on Gmail. Please switch to Gmail and start to detect.");
+                return;
+            }
 
             const storedKeywords = localStorage.getItem('customKeywords');
             const keywords = storedKeywords ? JSON.parse(storedKeywords) : [];
@@ -58,7 +77,14 @@
                                 console.error('Message error:', chrome.runtime.lastError.message);
                             } else {
                                 alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
+                                //alert("Text is: " + response.bodyText);
                                 detectedKeywords.value = response.matched;
+
+                                /*
+                                * 当切换页面时，detected到的敏感词数组不会被清空
+                                * 而当关闭插件再打开时，此数组清空，需要重新检测
+                                */
+                                sessionStorage.setItem('matchedThreats', JSON.stringify(response.matched));
                             }
                         });
                     }
