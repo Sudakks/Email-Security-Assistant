@@ -124,7 +124,24 @@
             );
         });
     };
+
     const ChatGPTDetection = async (emailBody) => {
+        try {
+            const response = await axios.post(
+                'http://localhost:3000/api/detect-threats', // 后端地址
+                { emailBody },
+                { headers: { 'Content-Type': 'application/json' } }
+            );
+
+            return response.data;
+        } catch (error) {
+            console.error('Detection failed:', error);
+            alert(`检测失败: ${error.response?.data?.error || error.message}`);
+            return [];
+        }
+    }
+
+    /*const ChatGPTDetection = async (emailBody) => {
         try {
             const apiKey = 'sk-E7kH3grrS6hOOHH2HB2iKcnWIomiiaXd6LnM6rT32hd7bBE5' // 记得替换为你的实际 key
 
@@ -172,16 +189,11 @@
             const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
             console.table(parsedThreats);
             return parsedThreats;
-            /* 
-                *为什么这里还要再调用一次updateThreatsList?
-                *因为ChatGPTDetection是一个async异步函数
-                *所以sendSignal调用完它之后，其实detectedGPTInfo还没有拿到它的数据
-                *updateThreatsList();
-            */
+
         } catch (error) {
             console.error('error is:', error.response?.data || error.message);
             alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
             return [];
         }
-    }
+    }*/
 </script>
