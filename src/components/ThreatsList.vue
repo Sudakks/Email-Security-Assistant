@@ -12,6 +12,7 @@
 
     const ThreatsList = ref([]);
     const detectedKeywords = inject('detectedKeywords', ref([]));
+    const detectedGPTInfo = inject('detectedPrivacyInfo', ref([]));
 
 
     watch(detectedKeywords, (newKeywords) => {
@@ -22,6 +23,17 @@
                 threatPriority: "high",
                 attribute: "Customed Keywords Detected",
                 content: item.keyword
+            });
+        });
+    }, { immediate: true });
+
+    watch(detectedGPTInfo, (newGPTInfo) => {
+        newGPTInfo.forEach((item) => {
+            ThreatsList.value.push({
+                id: ThreatsList.value.length + 1,
+                threatPriority: item.threatPriority,
+                attribute: item.attribute,
+                content: item.content
             });
         });
     }, { immediate: true });

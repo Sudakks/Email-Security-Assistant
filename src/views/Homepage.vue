@@ -34,11 +34,17 @@
     import axios from 'axios'
 
     const detectedKeywords = ref([]);
-    const saved = sessionStorage.getItem('matchedThreats');
-    if (saved) {
-        detectedKeywords.value = JSON.parse(saved);
+    const detectedPrivacyInfo = ref([]);
+    const savedDetectedKeywords = sessionStorage.getItem('matchedKeywordsThreats');
+    const savedDetectedGPT = sessionStorage.getItem('savedDetectedGPT');
+    if (savedDetectedKeywords) {
+        detectedKeywords.value = JSON.parse(savedDetectedKeywords);
+    }
+    if (savedDetectedGPT) {
+        detectedPrivacyInfo.value = JSON.parse(savedDetectedGPT);
     }
     provide("detectedKeywords", detectedKeywords);
+    provide("detectedPrivacyInfo", detectedPrivacyInfo);
 
 
 
@@ -84,7 +90,7 @@
                                 * 当切换页面时，detected到的敏感词数组不会被清空
                                 * 而当关闭插件再打开时，此数组清空，需要重新检测
                                 */
-                                sessionStorage.setItem('matchedThreats', JSON.stringify(response.matched));
+                                sessionStorage.setItem('matchedKeywordsThreats', JSON.stringify(response.matched));
                             }
                         });
                     }
@@ -102,19 +108,27 @@
                     model: "gpt-3.5-turbo",
                     messages: [{
                         role: "user",
-                        content: `Please carefully analyze the following email content and identify all instances of sensitive personal information. This includes but is not limited to:
-
-- Phone numbers  
-- Physical addresses  
-- Identification numbers (e.g., passport, national ID)  
-- Email addresses  
-- Bank account or credit card numbers  
-- Social Security Numbers  
-- Any other personally identifiable information (PII)
-
-Return the results in a clear and structured list. If no sensitive information is found, please state "No sensitive information detected."
-
-Email content:\n${emailBody}`
+                        content:
+                        `Please carefully analyze the following email content and extract any sensitive information, including:
+                        - Phone numbers
+                        - Physical addresses
+                        - Identification numbers (e.g., ID card, passport)
+                        - Email addresses
+                        - Bank account numbers
+                        - Credit card numbers
+                        - Passwords
+                        
+                        Please return the result as a JSON array. Each item should have:
+                        - "threatPriority": "low", "medium", or "high" (fixed priority based on the type)
+                            - ID number, bank accounts, and passwords => high
+                            - phone numbers, addresses => medium
+                            - email addresses => low
+                        - "attribute": The type of sensitive information (e.g., "Phone Number Exposed", "Email Exposed")
+                        - "content": The exact detected sensitive information
+                        
+                        If no sensitive information is found, return an empty array [].
+                        
+                        Email content:\n${emailBody}`
                     }],
                 },
                 {
@@ -125,45 +139,18 @@ Email content:\n${emailBody}`
                 }
             )
 
-            const GptFetchedInfo = response.data.choices[0].message.content
-            alert("response is: " + GptFetchedInfo)
+            const GptFetchedInfo = response.data.choices[0].message.content;
+            //alert("response is: " + GptFetchedInfo);
+            const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
+            console.table(parsedThreats);
+            detectedPrivacyInfo.value = parsedThreats;
+            sessionStorage.setItem('detectedPrivacyInfo', JSON.stringify(parsedThreats));
+
         } catch (error) {
             console.error('error is:', error.response?.data || error.message);
             alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
         }
     }
 
-    /*
-    const ChatGPTDetection = async (emailBody) => {
-        try {
-            const apiKey = 'sk-E7kH3grrS6hOOHH2HB2iKcnWIomiiaXd6LnM6rT32hd7bBE5'; // 替换为有效密钥
-
-            // 添加请求体长度限制（GPT-3.5最大支持4096 tokens）
-            const truncatedBody = emailBody.slice(0, 3000);
-
-            const response = await axios.post(
-                'https://api.openai.com/v1/chat/completions',
-                {
-                    model: "gpt-3.5-turbo",
-                    messages: [{
-                        role: "user",
-                        content: `Please analyze the following email content and list all sensitive information (telephone number, address, ID number, etc.):\n${truncatedBody}`
-                    }],
-                    temperature: 0.7
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    },
-                    timeout: 15000 // 设置超时时间
-                }
-            );
-
-            // 处理响应...
-        } catch (error) {
-            console.error('error is:', error.response?.data || error.message);
-            alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
-        }
-    }*/
+    
 </script>
