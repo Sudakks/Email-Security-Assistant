@@ -11,11 +11,12 @@
     ]);*/
 
     const ThreatsList = ref([]);
-    const detectedKeywords = inject('detectedKeywords', ref([]));
-    const detectedGPTInfo = inject('detectedPrivacyInfo', ref([]));
+    //const detectedKeywords = inject('detectedKeywords', ref([]));
+    //const detectedGPTInfo = inject('detectedPrivacyInfo', ref([]));
+    ThreatsList = inject('ThreatsList', ref([]));
 
 
-    watch(detectedKeywords, (newKeywords) => {
+    /*watch(detectedKeywords, (newKeywords) => {
         ThreatsList.value = []; // 清空旧的
         newKeywords.forEach((item) => {
             ThreatsList.value.push({
@@ -36,7 +37,7 @@
                 content: item.content
             });
         });
-    }, { immediate: true });
+    }, { immediate: true });*/
 
     /* 作用，移除threat提示后要干嘛 */
     const removeItem = (id) => {

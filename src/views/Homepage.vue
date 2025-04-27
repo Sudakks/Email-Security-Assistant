@@ -33,21 +33,44 @@
     import { provide, ref } from 'vue'
     import axios from 'axios'
 
-    const detectedKeywords = ref([]);
-    const detectedPrivacyInfo = ref([]);
-    const savedDetectedKeywords = sessionStorage.getItem('matchedKeywordsThreats');
-    const savedDetectedGPT = sessionStorage.getItem('savedDetectedGPT');
-    if (savedDetectedKeywords) {
-        detectedKeywords.value = JSON.parse(savedDetectedKeywords);
+    const threatsList = ref([]);
+    const detectedCustomedKeywords = ref([]);
+    const detectedGPTInfo = ref([]);
+    const saved = sessionStorage.getItem('matchedThreats');
+    if (saved) {
+        threatsList = saved
     }
-    if (savedDetectedGPT) {
-        detectedPrivacyInfo.value = JSON.parse(savedDetectedGPT);
-    }
-    provide("detectedKeywords", detectedKeywords);
-    provide("detectedPrivacyInfo", detectedPrivacyInfo);
+
+
+    const updateThreatsList = () => {
+        threatsList.value = [];
+
+        detectedCustomedKeywords.value.forEach(item => {
+            threatsList.value.push({
+                id: threatsList.value.length + 1,
+                threatPriority: 'high',
+                attribute: 'Customed Keywords Detected',
+                content: item.keyword
+            });
+        });
+
+        detectedGPTInfo.value.forEach(item => {
+            threatsList.value.push({
+                id: threatsList.value.length + 1,
+                threatPriority: item.threatPriority,
+                attribute: item.attribute,
+                content: item.content
+            });
+        });
+
+        sessionStorage.setItem('matchedThreats', JSON.stringify(threatsList.value));
+    };
 
 
 
+    watch([detectedCustomedKeywords, detectedGPTInfo], updateThreatsList, { immediate: true });
+
+    provide("threatsList", threatsList);
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -84,13 +107,15 @@
                             } else {
                                 alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
                                 //alert("Text is: " + response.bodyText);
-                                detectedKeywords.value = response.matched;
+                                detectedCustomedKeywords.value = response.matched;
+                                
                                 ChatGPTDetection(response.bodyText);
                                 /*
                                 * 当切换页面时，detected到的敏感词数组不会被清空
                                 * 而当关闭插件再打开时，此数组清空，需要重新检测
                                 */
-                                sessionStorage.setItem('matchedKeywordsThreats', JSON.stringify(response.matched));
+
+                                //sessionStorage.setItem('matchedKeywordsThreats', JSON.stringify(response.matched));
                             }
                         });
                     }
@@ -143,8 +168,8 @@
             //alert("response is: " + GptFetchedInfo);
             const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
             console.table(parsedThreats);
-            detectedPrivacyInfo.value = parsedThreats;
-            sessionStorage.setItem('detectedPrivacyInfo', JSON.stringify(parsedThreats));
+            detectedGPTInfo.value = parsedThreats;
+            //sessionStorage.setItem('detectedPrivacyInfo', JSON.stringify(parsedThreats));
 
         } catch (error) {
             console.error('error is:', error.response?.data || error.message);
