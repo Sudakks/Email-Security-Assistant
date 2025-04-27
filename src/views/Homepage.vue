@@ -12,7 +12,6 @@
 <style scoped>
     .homepageButton {
         align-items: center;
-        /*background-color: #4CAF50;*/
         border: none;
         border-radius: 2px;
         color: white;
@@ -23,8 +22,7 @@
         cursor: pointer;
         display: block;
         width: 94%;
-        /*max-width: 400px;  限制最大宽度 */
-        margin: 5px auto; /* 左右自动居中 */
+        margin: 5px auto; 
     }
 </style>
 
@@ -68,13 +66,9 @@
             });
         });
 
+        /* 手动更新threatsList，而不用监听detectedGPTInfo的方法，因为切换页面的时候会自动清零 */
         saveThreatsList();
     };
-
-
-
-    //watch([detectedCustomedKeywords, detectedGPTInfo], updateThreatsList, { immediate: true });
-
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -107,24 +101,22 @@
                     } else {
                         chrome.tabs.sendMessage(tab.id, { action: 'startDetection', keywords }, async (response) => {
                             if (chrome.runtime.lastError) {
-                                console.error('Message error:', chrome.runtime.lastError.message);
+                                console.error('Message erro                                * r:', chrome.runtime.lastError.message);
                             } else {
                                 alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
                                 //alert("Text is: " + response.bodyText);
                                 detectedCustomedKeywords.value = response.matched;
-                                
-                                const gptResults = await ChatGPTDetection(response.bodyText);
-                                detectedGPTInfo.value = gptResults;
-                                //手动控制，每次更新后再更新threatsList
-                                //threatsList 应该自己管理自己的生命周期
-                                //不要依赖 detectedCustomedKeywords 或 detectedGPTInfo 的初始值
+                                detectedGPTInfo.value = await ChatGPTDetection(response.bodyText);
+                                /*手动控制，每次更新后再更新threatsList
+                                *threatsList 应该自己管理自己的生命周期
+                                *不要依赖 detectedCustomedKeywords 或 detectedGPTInfo 的初始值
+                                *得到两个数组的值后再更新*/
                                 updateThreatsList();
                                 /*
                                 * 当切换页面时，detected到的敏感词数组不会被清空
                                 * 而当关闭插件再打开时，此数组清空，需要重新检测
+                                *sessionStorage.setItem('matchedKeywordsThreats', JSON.stringify(response.matched));
                                 */
-
-                                //sessionStorage.setItem('matchedKeywordsThreats', JSON.stringify(response.matched));
                             }
                         });
                     }
@@ -180,19 +172,16 @@
             const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
             console.table(parsedThreats);
             return parsedThreats;
-            //detectedGPTInfo.value = parsedThreats;
-            /*  *为什么这里还要再调用一次updateThreatsList?
+            /* 
+                *为什么这里还要再调用一次updateThreatsList?
                 *因为ChatGPTDetection是一个async异步函数
                 *所以sendSignal调用完它之后，其实detectedGPTInfo还没有拿到它的数据
+                *updateThreatsList();
             */
-            //updateThreatsList();
-            //sessionStorage.setItem('detectedPrivacyInfo', JSON.stringify(parsedThreats));
         } catch (error) {
             console.error('error is:', error.response?.data || error.message);
             alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
             return [];
         }
     }
-
-    
 </script>
