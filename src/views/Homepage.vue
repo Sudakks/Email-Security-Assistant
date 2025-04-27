@@ -30,7 +30,7 @@
 
 <script setup>
     import ThreatsList from "../components/ThreatsList.vue"
-    import { provide, ref } from 'vue'
+    import { provide, ref, watch } from 'vue'
     import axios from 'axios'
 
     const threatsList = ref([]);
@@ -38,9 +38,14 @@
     const detectedGPTInfo = ref([]);
     const saved = sessionStorage.getItem('matchedThreats');
     if (saved) {
-        threatsList = saved
+        threatsList.value = JSON.parse(saved);
     }
 
+    provide("threatsList", threatsList);
+
+    const saveThreatsList = () => {
+        sessionStorage.setItem('matchedThreats', JSON.stringify(threatsList.value));
+    };
 
     const updateThreatsList = () => {
         threatsList.value = [];
@@ -63,14 +68,13 @@
             });
         });
 
-        sessionStorage.setItem('matchedThreats', JSON.stringify(threatsList.value));
+        saveThreatsList();
     };
 
 
 
-    watch([detectedCustomedKeywords, detectedGPTInfo], updateThreatsList, { immediate: true });
+    //watch([detectedCustomedKeywords, detectedGPTInfo], updateThreatsList, { immediate: true });
 
-    provide("threatsList", threatsList);
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -101,7 +105,7 @@
                     if (chrome.runtime.lastError) {
                         console.error('contentScript injection failed:', chrome.runtime.lastError.message);
                     } else {
-                        chrome.tabs.sendMessage(tab.id, { action: 'startDetection', keywords }, (response) => {
+                        chrome.tabs.sendMessage(tab.id, { action: 'startDetection', keywords }, async (response) => {
                             if (chrome.runtime.lastError) {
                                 console.error('Message error:', chrome.runtime.lastError.message);
                             } else {
@@ -109,7 +113,12 @@
                                 //alert("Text is: " + response.bodyText);
                                 detectedCustomedKeywords.value = response.matched;
                                 
-                                ChatGPTDetection(response.bodyText);
+                                const gptResults = await ChatGPTDetection(response.bodyText);
+                                detectedGPTInfo.value = gptResults;
+                                //手动控制，每次更新后再更新threatsList
+                                //threatsList 应该自己管理自己的生命周期
+                                //不要依赖 detectedCustomedKeywords 或 detectedGPTInfo 的初始值
+                                updateThreatsList();
                                 /*
                                 * 当切换页面时，detected到的敏感词数组不会被清空
                                 * 而当关闭插件再打开时，此数组清空，需要重新检测
@@ -142,8 +151,10 @@
                         - Bank account numbers
                         - Credit card numbers
                         - Passwords
-                        
-                        Please return the result as a JSON array. Each item should have:
+
+                        Please return ONLY the JSON array, without any additional text, without any markdown formatting (no \`\`\`json), and without explanations.
+
+                        Each item should have:
                         - "threatPriority": "low", "medium", or "high" (fixed priority based on the type)
                             - ID number, bank accounts, and passwords => high
                             - phone numbers, addresses => medium
@@ -165,15 +176,21 @@
             )
 
             const GptFetchedInfo = response.data.choices[0].message.content;
-            //alert("response is: " + GptFetchedInfo);
+            alert("response is: " + GptFetchedInfo);
             const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
             console.table(parsedThreats);
-            detectedGPTInfo.value = parsedThreats;
+            return parsedThreats;
+            //detectedGPTInfo.value = parsedThreats;
+            /*  *为什么这里还要再调用一次updateThreatsList?
+                *因为ChatGPTDetection是一个async异步函数
+                *所以sendSignal调用完它之后，其实detectedGPTInfo还没有拿到它的数据
+            */
+            //updateThreatsList();
             //sessionStorage.setItem('detectedPrivacyInfo', JSON.stringify(parsedThreats));
-
         } catch (error) {
             console.error('error is:', error.response?.data || error.message);
             alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
+            return [];
         }
     }
 

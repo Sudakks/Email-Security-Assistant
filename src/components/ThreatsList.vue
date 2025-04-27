@@ -9,41 +9,20 @@
         { id: 2, threatPriority: "medium", attribute: "Email Exposed", content: "example@email.com" },
         { id: 3, threatPriority: "low", attribute: "Weak Password", content: "password123" }
     ]);*/
-
-    const ThreatsList = ref([]);
-    //const detectedKeywords = inject('detectedKeywords', ref([]));
-    //const detectedGPTInfo = inject('detectedPrivacyInfo', ref([]));
-    ThreatsList = inject('ThreatsList', ref([]));
+    const ThreatsList = inject('threatsList', ref([]));
 
 
-    /*watch(detectedKeywords, (newKeywords) => {
-        ThreatsList.value = []; // 清空旧的
-        newKeywords.forEach((item) => {
-            ThreatsList.value.push({
-                id: ThreatsList.value.length + 1,
-                threatPriority: "high",
-                attribute: "Customed Keywords Detected",
-                content: item.keyword
-            });
-        });
-    }, { immediate: true });
-
-    watch(detectedGPTInfo, (newGPTInfo) => {
-        newGPTInfo.forEach((item) => {
-            ThreatsList.value.push({
-                id: ThreatsList.value.length + 1,
-                threatPriority: item.threatPriority,
-                attribute: item.attribute,
-                content: item.content
-            });
-        });
-    }, { immediate: true });*/
 
     /* 作用，移除threat提示后要干嘛 */
     const removeItem = (id) => {
         ThreatsList.value = ThreatsList.value.filter(item => item.id !== id);
     }
-    const threatsNum = ref(ThreatsList.value.length);
+    //const threatsNum = ref(ThreatsList.value.length);
+    watch(ThreatsList, (newList) => {
+        sessionStorage.setItem('matchedThreats', JSON.stringify(newList));
+    }, { deep: true });
+    /*这一句只在脚本初始化阶段运行了一次
+    sessionStorage.setItem('matchedThreats', JSON.stringify(ThreatsList.value));*/
 </script>
 
 <template>
