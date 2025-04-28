@@ -22,12 +22,14 @@ Style.textContent = `
 `;
 document.head.appendChild(Style);
 
+let originalHTML = '';//用来存储原始HTML内容
 let cachedMatchedKeywords = [];
 
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startDetection') {
         /* 获得邮件中最重要的正文部分 */
+        originalHTML = document.body.innerHTML;
         const msgBodies = document.querySelectorAll('div.a3s');
         let bodyText = '';
         msgBodies.forEach(el => {
@@ -36,8 +38,8 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
         const matched = matchKeywords(bodyText, request.keywords);
         //console.log('[Email Assistant] Matched in Gmail body:', matched);
-        cachedMatchedKeywords = matched;
-        cachedMatchedKeywords = [...cachedMatchedKeywords].sort((a, b) => b.keyword.length - a.keyword.length);
+        //cachedMatchedKeywords = matched;
+        //cachedMatchedKeywords = [...cachedMatchedKeywords].sort((a, b) => b.keyword.length - a.keyword.length);
 
         //console.log("At first: " + cachedMatchedKeywords);
 
@@ -47,53 +49,35 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 
 
     if (request.action === 'highlightKeyword') {
-        //console.log(cachedMatchedKeywords);
         const keyword = request.keyword;
-        //alert("the keyword is: " + keyword);
-        //清除旧高亮
-        document.querySelectorAll(`mark[data-keyword="${keyword}"]`)
-            .forEach(el => el.classList.remove('active-highlight'));
-        const targetItems = cachedMatchedKeywords.filter(item => item.keyword === keyword);
+        const safeKeyword = CSS.escape(keyword);
+        //console.log("original is " + originalHTML);
+        document.body.innerHTML = originalHTML;
+        //console.log("new HTML is " + document.body.innerHTML);
+        const allKeywords = [...cachedMatchedKeywords, { keyword, count: 1 }];
+        const sortedKeywords = allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
+        highlightSensitiveWords(sortedKeywords, false);
+        // 先清除之前的高亮（如果有）
+        /*document.querySelectorAll('mark.highlight-sensitive')
+            .forEach(el => el.replaceWith(document.createTextNode(el.textContent)));*/
 
-        if (targetItems.length > 0) {
-            
+        // 重新在全页里高亮这个关键词
 
-            highlightSensitiveWords(targetItems, true);
-            const targets = document.querySelectorAll(`mark.highlight-sensitive[data-keyword="${keyword}"]`);
-            if (targets.length > 0) {
-                targets[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+        const targets = document.querySelectorAll(`mark.highlight-sensitive[data-keyword="${safeKeyword}"]`);
+
+        if (targets.length > 0) {
+            targets[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
+
+            targets.forEach(target => {
+                target.classList.add('active-highlight');
+            });
+
+            setTimeout(() => {
                 targets.forEach(target => {
-                    target.classList.add('active-highlight');
-                })
-                setTimeout(() => {
-                    targets.forEach(target => {
-                        target.classList.remove('active-highlight');
-                    });
-                }, 2000);
-            }
+                    target.classList.remove('active-highlight');
+                });
+            }, 2000);
         }
-        else {
-            //说明这个是GPT生成的
-            highlightSensitiveWords([{ keyword: keyword, count: 1 }], true);
-            const targets = document.querySelectorAll(`mark.highlight-sensitive[data-keyword="${keyword}"]`);
-            if (targets.length > 0) {
-                targets[0].scrollIntoView({ behavior: 'smooth', block: 'center' });
-                targets.forEach(target => {
-                    target.classList.add('active-highlight');
-                })
-                setTimeout(() => {
-                    targets.forEach(target => {
-                        target.classList.remove('active-highlight');
-                    });
-                }, 2000);
-            }
-        }
-        /*else if (targetItems.length === 0) {
-            cachedMatchedKeywords.push({ keyword, count: 1 }); // 默认 count 为 1
-            highlightSensitiveWords([{ keyword: keyword, count: 1 }], true);
-
-        }*/
-        return true;
     }
 });
 
@@ -120,13 +104,9 @@ function highlightSensitiveWords(matched, clearPrevious = true) {
     if (!body) return;
     console.log("body is "+body);
 
-    if (clearPrevious) {
-        document.querySelectorAll('mark.highlight-sensitive')
-            .forEach(el => el.replaceWith(document.createTextNode(el.textContent)));
-    }
-
-
-    matched.forEach(item => {
+    
+    const sortedMatched = matched.sort((a, b) => b.keyword.length - a.keyword.length);
+    sortedMatched.forEach(item => {
         const keyword = item.keyword;
         if (!keyword) return;
         //console.log("keyword is " + keyword);

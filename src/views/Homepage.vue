@@ -121,6 +121,8 @@
                                 *不要依赖 detectedCustomedKeywords 或 detectedGPTInfo 的初始值
                                 *得到两个数组的值后再更新*/
                                 updateThreatsList();
+                                chrome.tabs.sendMessage(tab.id, { action: 'highlightAll', data: threatsList.value }, async (response) => {
+                                });
                                 /*
                                 * 当切换页面时，detected到的敏感词数组不会被清空
                                 * 而当关闭插件再打开时，此数组清空，需要重新检测
