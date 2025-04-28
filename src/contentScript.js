@@ -79,6 +79,18 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
             }, 2000);
         }
     }
+
+    if (request.action === 'removeHighlight') {
+        const keyword = request.keyword;
+        const safeKeyword = CSS.escape(keyword);
+
+        // 清除所有相关高亮标记
+        document.querySelectorAll(`mark.highlight-sensitive[data-keyword="${safeKeyword}"]`)
+            .forEach(el => el.replaceWith(document.createTextNode(el.textContent)));
+
+        // 更新缓存（可选）
+        cachedMatchedKeywords = cachedMatchedKeywords.filter(item => item.keyword !== keyword);
+    }
 });
 
 function matchKeywords(text, keywords = []) {

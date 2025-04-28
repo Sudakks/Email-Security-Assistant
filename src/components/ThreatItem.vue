@@ -36,7 +36,7 @@
                     <p class="content">{{content}}</p>
                 </div>
             </div>
-            <button @click="emit('remove', id)" class="remove-btn">
+            <button @click.stop="emit('remove', id)" class="remove-btn">
                 <XCircleIcon class="remove-icon" />
             </button>
         </div>

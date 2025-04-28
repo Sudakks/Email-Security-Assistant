@@ -44,13 +44,14 @@
     const saveThreatsList = () => {
         sessionStorage.setItem('matchedThreats', JSON.stringify(threatsList.value));
     };
-
+    let itemIdCounter = 0;
     const updateThreatsList = () => {
         threatsList.value = [];
+        itemIdCounter = 0; 
 
         detectedCustomedKeywords.value.forEach(item => {
             threatsList.value.push({
-                id: threatsList.value.length + 1,
+                id: ++itemIdCounter,
                 threatPriority: 'high',
                 attribute: 'Customed Keywords Detected',
                 content: item.keyword
@@ -59,7 +60,7 @@
 
         detectedGPTInfo.value.forEach(item => {
             threatsList.value.push({
-                id: threatsList.value.length + 1,
+                id: ++itemIdCounter,
                 threatPriority: item.threatPriority,
                 attribute: item.attribute,
                 content: item.content

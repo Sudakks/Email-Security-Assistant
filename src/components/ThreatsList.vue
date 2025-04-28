@@ -7,7 +7,20 @@
 
 
     /* 作用，移除threat提示后要干嘛?TODO */
+    // ThreatsList.vue 修改 removeItem 方法
     const removeItem = (id) => {
+        const removedItem = ThreatsList.value.find(item => item.id === id);
+        if (removedItem) {
+            // 发送清除高亮消息
+            chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+                chrome.tabs.sendMessage(tabs[0].id, {
+                    action: 'removeHighlight',
+                    keyword: removedItem.content // 传递要清除的关键词
+                });
+            });
+        }
+
+        // 原删除逻辑
         ThreatsList.value = ThreatsList.value.filter(item => item.id !== id);
     }
 
