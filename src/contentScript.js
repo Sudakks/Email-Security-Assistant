@@ -37,13 +37,13 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
         const matched = matchKeywords(bodyText, request.keywords);
         console.log('[Email Assistant] Matched in Gmail body:', matched);
         cachedMatchedKeywords = matched;
-        //highlightSensitiveWords(matched);//开始高亮匹配
         sendResponse({ matched, bodyText });
         return true;
     }
 
     if (request.action === 'highlightKeyword') {
         const keyword = request.keyword;
+        //alert("the keyword is: " + keyword);
         //清除旧高亮
         document.querySelectorAll(`mark[data-keyword="${keyword}"]`)
             .forEach(el => el.classList.remove('active-highlight'));
@@ -63,6 +63,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
                     });
                 }, 2000);
             }
+        }
+        else if (targetItems.length === 0) {
+            cachedMatchedKeywords.push({ keyword, count: 1 }); // 默认 count 为 1
+            highlightSensitiveWords([{ keyword, count: 1 }], true);
         }
     }
 });
@@ -85,7 +89,7 @@ function escapeRegExp(s) {
     return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-function highlightSensitiveWords(matched,clearPrevious = false) {
+function highlightSensitiveWords(matched, clearPrevious = false) {
     const body = document.body;
     if (!body) return;
 
