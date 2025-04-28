@@ -107,6 +107,15 @@
                                 //alert("Text is: " + response.bodyText);
                                 detectedCustomedKeywords.value = response.matched;
                                 detectedGPTInfo.value = await ChatGPTDetection(response.bodyText);
+                                const tmp = detectedGPTInfo.value;
+                                /*chrome.tabs.sendMessage(tab.id, { action: 'addGPTInfo', data:tmp }, async (another) => {
+                                    if (chrome.runtime.lastError) {
+                                        console.error('Error sending another action:', chrome.runtime.lastError.message);
+                                    } else {
+                                        console.log('Successfully sent another action:', anotherResponse);
+                                        // 可以根据 anotherResponse 处理后续逻辑
+                                    }
+                                });*/
                                 /*手动控制，每次更新后再更新threatsList
                                 *threatsList 应该自己管理自己的生命周期
                                 *不要依赖 detectedCustomedKeywords 或 detectedGPTInfo 的初始值
@@ -141,59 +150,4 @@
         }
     }
 
-    /*const ChatGPTDetection = async (emailBody) => {
-        try {
-            const apiKey = 'sk-E7kH3grrS6hOOHH2HB2iKcnWIomiiaXd6LnM6rT32hd7bBE5' // 记得替换为你的实际 key
-
-            const response = await axios.post(
-                'https://api.chatanywhere.org/v1/chat/completions',
-                {
-                    model: "gpt-3.5-turbo",
-                    messages: [{
-                        role: "user",
-                        content:
-                        `Please carefully analyze the following email content and extract any sensitive information, including:
-                        - Phone numbers
-                        - Physical addresses
-                        - Identification numbers (e.g., ID card, passport)
-                        - Email addresses
-                        - Bank account numbers
-                        - Credit card numbers
-                        - Passwords
-
-                        Please return ONLY the JSON array, without any additional text, without any markdown formatting (no \`\`\`json), and without explanations.
-
-                        Each item should have:
-                        - "threatPriority": "low", "medium", or "high" (fixed priority based on the type)
-                            - ID number, bank accounts, and passwords => high
-                            - phone numbers, addresses => medium
-                            - email addresses => low
-                        - "attribute": The type of sensitive information (e.g., "Phone Number Exposed", "Email Exposed")
-                        - "content": The exact detected sensitive information
-                        
-                        If no sensitive information is found, return an empty array [].
-                        
-                        Email content:\n${emailBody}`
-                    }],
-                },
-                {
-                    headers: {
-                        Authorization: `Bearer ${apiKey}`,
-                        'Content-Type': 'application/json'
-                    }
-                }
-            )
-
-            const GptFetchedInfo = response.data.choices[0].message.content;
-            alert("response is: " + GptFetchedInfo);
-            const parsedThreats = JSON.parse(GptFetchedInfo.trim().replace(/^```json|```$/g, ''));
-            console.table(parsedThreats);
-            return parsedThreats;
-
-        } catch (error) {
-            console.error('error is:', error.response?.data || error.message);
-            alert(`wrong: ${error.response?.data?.error?.message || error.message}`);
-            return [];
-        }
-    }*/
 </script>
