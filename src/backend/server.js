@@ -111,7 +111,7 @@ app.post('/api/detect-threats', async (req, res) => {
             const orig = emailBody.slice(ent.start, ent.end);
             const mask = maskPreservingFormat(orig);
             mapPresidio[mask] = orig;
-            //console.log("The orig is " + orig + ", the masked is " + mask);
+            console.log("The orig is " + orig + ", the masked is " + mask);
 
             const re = new RegExp(escapeRegExp(orig), 'g');
             mergedMasked = mergedMasked.replace(re, mask);
@@ -146,7 +146,7 @@ app.post('/api/detect-threats', async (req, res) => {
                             - phone numbers, addresses => medium
                             - email addresses => low
                         - "attribute": The type of sensitive information (e.g., "Phone Number Exposed", "Email Exposed")
-                        - "content": The exact detected sensitive information
+                        - "content": The exact detected sensitive information. Please ignore the punctuation at the end and only display the main information (for example, 12345678@qq.com! The final punctuation! should not be included in the content)
                         
                         If no sensitive information is found, return an empty array [].
                         

@@ -1,19 +1,37 @@
 # presidio_service.py
 from flask import Flask, request, jsonify
 import re
-from presidio_analyzer import AnalyzerEngine, RecognizerResult
+from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
+from presidio_analyzer.nlp_engine import NlpEngineProvider
+from presidio_analyzer import Pattern, PatternRecognizer, RecognizerResult
 
 app = Flask(__name__)
-analyzer = AnalyzerEngine()
+#analyzer = AnalyzerEngine()
 
-ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "LOCATION", "URL", "PHONE_NUMBER"]
+#自定义地址
+ADDRESS_REGEX = r"\b\d+\s+([A-Za-z]+\s+)+(?:Avenue|Street|Road|Rd|St|Ave|Boulevard|Blvd|Lane|Ln|Drive|Dr),\s*(?:[A-Za-z]+\s*)+(?:,\s*[A-Za-z]+\s*)*"
+address_recognizer = PatternRecognizer(
+    supported_entity="C_ADDRESS",
+    patterns=[Pattern("address", regex=ADDRESS_REGEX, score=0.8)]
+)
+
+registry = RecognizerRegistry()
+registry.load_predefined_recognizers()
+registry.add_recognizer(address_recognizer)
+analyzer = AnalyzerEngine(registry=registry)
+
+# 包含ADDRESS实体
+ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "URL"]
 
 def merge_adjacent_locations(entities, text):
     sorted_entities = sorted(entities, key=lambda x: x.start)
     merged = []
     i = 0
+    print(len(sorted_entities))
     while i < len(sorted_entities):
         current = sorted_entities[i]
+        print(current.start)
+
         if current.entity_type != "LOCATION":
             merged.append(current)
             i += 1
@@ -52,8 +70,9 @@ def anonymize():
         return jsonify({"error": "Missing 'text' field"}), 400
     try:
         results = analyzer.analyze(text=text, language="en", entities=ENTITIES)
-        merged_results = merge_adjacent_locations(results, text)
-        
+        #merged_results = merge_adjacent_locations(results, text)
+        for r in results:
+            print(f"the type is {r.entity_type}, start is {r.start}, end is {r.end}")
         return jsonify({
             "entities": [
                 {
@@ -61,7 +80,7 @@ def anonymize():
                     "start": r.start,
                     "end": r.end,
                     "original": text[r.start:r.end]
-                } for r in merged_results
+                } for r in results
             ]
         })
     except Exception as e:
