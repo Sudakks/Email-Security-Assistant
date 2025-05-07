@@ -28,8 +28,8 @@ function maskPreservingFormat(s) {
 const basicPatterns = {
     //email: /\b\S+@\S+\.\S+\b/g,
     cnPassportRegex : /\b[GE]\d{8}\b/g,
-    //bankCardRegex : /\b\d{16,19}\b/g,
-    //creditCardRegex : /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13})\b/g,
+    bankCardRegex : /\b\d{16,19}\b/g,
+    creditCardRegex : /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13})\b/g,
     //email : /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
     idCard: /\b[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b/g
 }
@@ -122,6 +122,7 @@ app.post('/api/detect-threats', async (req, res) => {
         const { maskedBody, mapMaskedOriginal } = buildMaskedBodyAndMap(mergedMasked);
         const fullMap = { ...mapPresidio, ...mapMaskedOriginal }
         console.log("final mask is " + maskedBody);
+        //console.log("length is " + len(fullMap));
         const response = await axios.post(
             'https://api.chatanywhere.org/v1/chat/completions',
             {
