@@ -11,7 +11,7 @@ from presidio_anonymizer.entities import OperatorConfig
 app = Flask(__name__)
 analyzer = AnalyzerEngine()
 
-ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "LOCATION", "URL"]
+ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "LOCATION", "URL", "PHONE_NUMBER"]
 
 @app.route("/anonymize", methods=["POST"])
 def anonymize():

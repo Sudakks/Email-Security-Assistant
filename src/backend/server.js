@@ -26,10 +26,10 @@ function maskPreservingFormat(s) {
 }
 
 const basicPatterns = {
-    email: /\b\S+@\S+\.\S+\b/g,
+    //email: /\b\S+@\S+\.\S+\b/g,
     cnPassportRegex : /\b[GE]\d{8}\b/g,
-    bankCardRegex : /\b\d{16,19}\b/g,
-    creditCardRegex : /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13})\b/g,
+    //bankCardRegex : /\b\d{16,19}\b/g,
+    //creditCardRegex : /\b(?:4[0-9]{12}(?:[0-9]{3})?|5[1-5][0-9]{14}|6(?:011|5[0-9]{2})[0-9]{12}|3[47][0-9]{13})\b/g,
     //email : /\b[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}\b/g,
     idCard: /\b[1-9]\d{5}(18|19|20)\d{2}(0[1-9]|1[0-2])(0[1-9]|[12]\d|3[01])\d{3}[\dXx]\b/g
 }
@@ -40,16 +40,26 @@ function buildMaskedBodyAndMap(bodyText) {
     //先识别电话号码
 
 
-    const foundPhones = Array.from(findNumbers(bodyText, 'CN'));
-    /*
-    console.log('number is ', foundPhones.length);
+    //const foundPhones = Array.from(findNumbers(bodyText, 'CN'));
+    const foundPhones = Array.from(findNumbers(bodyText, 'CN'))
+        .filter(match => {
+            const prevChar = bodyText[match.startsAt - 1] || '';
+            const nextChar = bodyText[match.endsAt] || '';
+            // 确保前后不是 @、或字母数字（除非是空格或标点）
+            //否则可能会匹配到邮箱部分信息
+            return !/[a-zA-Z0-9@]/.test(prevChar) && !/[a-zA-Z0-9@]/.test(nextChar);
+        });
+
+
+    
+    /*console.log('number is ', foundPhones.length);
     foundPhones.forEach((match, index) => {
         console.log(`📦 Match #${index + 1}:`, JSON.stringify(match, null, 2));
     });*/
     
     foundPhones.forEach(match => {
         if (match.phone) {
-            //console.log("sense number is " + match.phone);
+            console.log("sense number is " + match.phone);
             originals.push(match.phone); // 确保 number 存在
         }
     });
@@ -70,31 +80,48 @@ function buildMaskedBodyAndMap(bodyText) {
     for (const orig of originals) {
         const masked = maskPreservingFormat(orig);
         mapMaskedOriginal[masked] = orig;
-        console.log("The orig is " + orig + ", the masked is " + masked);
+        //console.log("The orig is " + orig + ", the masked is " + masked);
         //全局匹配
         const re = new RegExp(escapeRegExp(orig), 'g');
         maskedBody = maskedBody.replace(re, masked);
         //console.log("maskedBody is " + maskedBody);
     }
-    console.log("maskedBody is " + maskedBody);
+    //console.log("maskedBody is " + maskedBody);
     return { maskedBody, mapMaskedOriginal };
 }
 
-function sanitizeEmailBody(emailBody) {
-    let maskedBody = emailBody;
-    Object.values(basicPatterns).forEach((regex) => {
-        maskedBody = maskedBody.replace(regex, (match) => maskPreservingFormat(match));
-    });
-    return maskedBody;
+async function callPresidio(text) {
+    const { data } = await axios.post('http://localhost:5001/anonymize', { text });
+    return data;
 }
+
+
 
 // ChatGPT代理端点
 app.post('/api/detect-threats', async (req, res) => {
     try {
         const { emailBody } = req.body;
+        //先使用predisio脱敏
+        const { entities } = await callPresidio(emailBody);
+        //console.log("after presidio, the entities are:\n" + entities);
 
-        const { maskedBody, mapMaskedOriginal } = buildMaskedBodyAndMap(emailBody);
+        let mapPresidio = {};
+        let mergedMasked = emailBody;
+        entities.forEach(ent => {
+            const orig = emailBody.slice(ent.start, ent.end);
+            const mask = maskPreservingFormat(orig);
+            mapPresidio[mask] = orig;
+            //console.log("The orig is " + orig + ", the masked is " + mask);
 
+            const re = new RegExp(escapeRegExp(orig), 'g');
+            mergedMasked = mergedMasked.replace(re, mask);
+        });
+        console.log("after presidio, the text are:\n" + mergedMasked);
+
+
+        const { maskedBody, mapMaskedOriginal } = buildMaskedBodyAndMap(mergedMasked);
+        const fullMap = { ...mapPresidio, ...mapMaskedOriginal }
+        console.log("final mask is " + maskedBody);
         const response = await axios.post(
             'https://api.chatanywhere.org/v1/chat/completions',
             {
@@ -139,14 +166,14 @@ app.post('/api/detect-threats', async (req, res) => {
 
         //还原
         const restored = parsedThreats.map(item => {
-            const original = mapMaskedOriginal[item.content];
-            console.log("item is " + item.content + "\n ========");
+            const original = fullMap[item.content];
+            //console.log("item is " + item.content + "\n ========");
             if (original) {
-                console.log("original is " + original);
+                //console.log("original is " + original);
                 return { ...item, content: original };
             }
             else {
-                console.log("do not exist");
+                //console.log("do not exist");
                 return item;//如果检测出了未在basicPatterns里的GPT检测结果，那么直接返回原内容
             }
         });
