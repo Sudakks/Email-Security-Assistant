@@ -167,13 +167,10 @@ app.post('/api/detect-threats', async (req, res) => {
         //还原
         const restored = parsedThreats.map(item => {
             const original = fullMap[item.content];
-            //console.log("item is " + item.content + "\n ========");
             if (original) {
-                //console.log("original is " + original);
                 return { ...item, content: original };
             }
             else {
-                //console.log("do not exist");
                 return item;//如果检测出了未在basicPatterns里的GPT检测结果，那么直接返回原内容
             }
         });

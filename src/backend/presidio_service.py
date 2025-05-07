@@ -21,7 +21,7 @@ registry.add_recognizer(address_recognizer)
 analyzer = AnalyzerEngine(registry=registry)
 
 # 包含ADDRESS实体
-ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "URL"]
+ENTITIES = ["CREDIT_CARD", "EMAIL_ADDRESS", "IP_ADDRESS", "URL", "LOCATION"]
 
 def merge_adjacent_locations(entities, text):
     sorted_entities = sorted(entities, key=lambda x: x.start)
@@ -70,8 +70,8 @@ def anonymize():
         return jsonify({"error": "Missing 'text' field"}), 400
     try:
         results = analyzer.analyze(text=text, language="en", entities=ENTITIES)
-        #merged_results = merge_adjacent_locations(results, text)
-        for r in results:
+        merged_results = merge_adjacent_locations(results, text)
+        for r in merged_results:
             print(f"the type is {r.entity_type}, start is {r.start}, end is {r.end}")
         return jsonify({
             "entities": [
@@ -80,7 +80,7 @@ def anonymize():
                     "start": r.start,
                     "end": r.end,
                     "original": text[r.start:r.end]
-                } for r in results
+                } for r in merged_results
             ]
         })
     except Exception as e:
