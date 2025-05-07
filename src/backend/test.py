@@ -1,11 +1,7 @@
-# presidio_service.py
+﻿# presidio_service.py
 from flask import Flask, request, jsonify
 from presidio_analyzer import AnalyzerEngine, RecognizerRegistry
-from presidio_analyzer.predefined_recognizers import PatternRecognizer
-from presidio_analyzer import TextAnalyticsRecognizer, TextAnalyticsEntityCategory
-
 import random, string
-from presidio_anonymizer import AnonymizerEngine
 from presidio_anonymizer.entities import OperatorConfig
 
 app = Flask(__name__)
