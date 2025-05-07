@@ -28,20 +28,29 @@ let cachedMatchedKeywords = [];
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startDetection') {
-        /* 获得邮件中最重要的正文部分 */
-        originalHTML = document.body.innerHTML;
-        const msgBodies = document.querySelectorAll('div.a3s');
         let bodyText = '';
-        msgBodies.forEach(el => {
-            bodyText += el.innerText + '\n';
-        });
+
+        //看是否在compose页面
+        const isComposePage = window.location.href.includes('compose=');
+        if (isComposePage) {
+            originalHTML = document.body.innerHTML;
+            //获取compose里面的内容，在div.editable里面
+            const composeEditor = document.querySelector('div.editable');
+            if (composeEditor) {
+                bodyText = composeEditor.innerText;
+            }
+        }
+        else {
+            // 获得邮件中最重要的正文部分 
+            originalHTML = document.body.innerHTML;
+            const msgBodies = document.querySelectorAll('div.a3s');
+            msgBodies.forEach(el => {
+                bodyText += el.innerText + '\n';
+            });
+        }
 
         const matched = matchKeywords(bodyText, request.keywords);
-        //console.log('[Email Assistant] Matched in Gmail body:', matched);
-        //cachedMatchedKeywords = matched;
-        //cachedMatchedKeywords = [...cachedMatchedKeywords].sort((a, b) => b.keyword.length - a.keyword.length);
-
-        //console.log("At first: " + cachedMatchedKeywords);
+        console.log("the whole email is " + bodyText);
 
         sendResponse({ matched, bodyText });
         return true;
@@ -51,16 +60,10 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'highlightKeyword') {
         const keyword = request.keyword;
         const safeKeyword = CSS.escape(keyword);
-        //console.log("original is " + originalHTML);
         document.body.innerHTML = originalHTML;
-        //console.log("new HTML is " + document.body.innerHTML);
         const allKeywords = [...cachedMatchedKeywords, { keyword, count: 1 }];
         const sortedKeywords = allKeywords.sort((a, b) => b.keyword.length - a.keyword.length);
         highlightSensitiveWords(sortedKeywords, false);
-        // 先清除之前的高亮（如果有）
-        /*document.querySelectorAll('mark.highlight-sensitive')
-            .forEach(el => el.replaceWith(document.createTextNode(el.textContent)));*/
-
         // 重新在全页里高亮这个关键词
 
         const targets = document.querySelectorAll(`mark.highlight-sensitive[data-keyword="${safeKeyword}"]`);
