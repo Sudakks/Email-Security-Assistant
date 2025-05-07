@@ -180,8 +180,9 @@ app.post('/api/detect-threats', async (req, res) => {
         console.log('restored :', restored);
         return res.json(restored);
     } catch (error) {
-        console.error('Backend error:', error);
-        res.status(500).json({ error: error.message });
+        //console.error('Backend error:', error);
+        //res.status(500).json({ error: error.message });
+        console.error(error.response.data);  
     }
 });
 
