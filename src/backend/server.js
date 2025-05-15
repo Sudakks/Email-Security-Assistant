@@ -161,6 +161,14 @@ app.post('/api/detect-threats', async (req, res) => {
                 }
             }
         );
+        if (
+            !response.data ||
+            !Array.isArray(response.data.choices) ||
+            !response.data.choices[0]?.message?.content
+        ) {
+            console.error("Invalid response from ChatGPT:", response.data);
+            return res.status(500).json({ error: "Invalid ChatGPT response structure." });
+        }
 
         const gptResponse = response.data.choices[0].message.content;
         const parsedThreats = JSON.parse(gptResponse.trim().replace(/^```json|```$/g, ''));
@@ -178,9 +186,8 @@ app.post('/api/detect-threats', async (req, res) => {
         console.log('restored :', restored);
         return res.json(restored);
     } catch (error) {
-        //console.error('Backend error:', error);
-        //res.status(500).json({ error: error.message });
-        console.error(error.response.data);  
+        console.error('Backend error:', error.response?.data || error.message);
+        res.status(500).json({ error: error.response?.data || error.message });
     }
 });
 
