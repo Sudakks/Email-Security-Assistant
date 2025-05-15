@@ -3,13 +3,27 @@
     <button class="homepageButton" style="background-color: #FF9800;" @click="startEncryption">Encrypt the whole email</button>
     <div>
         <!-- 文件上传按钮 -->
+        <button class="homepageButton" style="background-color: #2196F3;" @click="decryptEmail">Decrypt the whole email</button>
         <input type="file" @change="handlePrivateKeyUpload" accept=".asc,.pgp,.txt" />
-        <button class="homepageButton" style="background-color: #2196F3; " @click="decryptEmail">Decrypt the whole email</button>
     </div>
     <ThreatsList />
+
     <div v-if="decryptedMessage">
-        <h3>Decrypted Message:</h3>
-        <pre>{{ decryptedMessage }}</pre>
+        <label class="prompt-text">Decrypted Message:</label>
+        <pre class="encrypted-output"
+             @click="copyToClipboard"
+             title="Click to copy">
+    {{ decryptedMessage }}
+    </pre>
+    </div>
+
+    <div v-if="encryptedMessage">
+        <label class="prompt-text">Encrypted Message:</label>
+        <pre class="encrypted-output"
+             @click="copyToClipboard"
+             title="Click to copy">
+  {{ encryptedMessage }}
+</pre>
     </div>
     <v-expansion-panels>
         <v-expansion-panel title="Title"
@@ -19,6 +33,15 @@
 </template>
 
 <style scoped>
+    .label {
+        display: block;
+        margin: 5px 5px;
+        font-weight: bold;
+        color: #444;
+        font-size: 15px;
+        padding: 5px 10px;
+    }
+
     .homepageButton {
         align-items: center;
         border: none;
@@ -33,6 +56,22 @@
         width: 94%;
         margin: 5px auto; 
     }
+    .encrypted-output {
+        white-space: pre-wrap;
+        word-wrap: break-word;
+        padding: 10px;
+        border-radius: 4px;
+        font-size: 14px;
+        /*max-height: 300px;*/
+        overflow-y: auto;
+        margin: 10px auto;
+        width: 90%;
+        cursor: copy; /* 鼠标样式提示可复制 */
+    }
+
+        .encrypted-output:hover {
+            background-color: #EEF7FA;
+        }
 </style>
 
 <script setup>
@@ -40,10 +79,19 @@
     import { provide, ref, watch } from 'vue'
     import axios from 'axios'
     import * as openpgp from 'openpgp';
-
+    const copyToClipboard = async () => {
+        try {
+            await navigator.clipboard.writeText(encryptedMessage.value);
+            alert("✅ Message copied to clipboard!");
+        } catch (err) {
+            console.error("Copy failed:", err);
+            alert("❌ Copy failed.");
+        }
+    };
     //用于存储privateKey和解密后的文件内容
     const privateKeyArmored = ref('');
     const decryptedMessage = ref('');
+    const encryptedMessage = ref('');
 
     // 处理私钥文件上传
     const handlePrivateKeyUpload = async (event) => {
@@ -60,7 +108,7 @@
             return;
         }
         else {
-            console.log("The private value is " + privateKeyArmored.value);
+            console.log("The private value is ", privateKeyArmored.value);
         }
 
         chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
@@ -258,6 +306,10 @@
                         chrome.tabs.sendMessage(tab.id, {
                             action: 'startEncryption',
                             publicKey: myPublicKey, // 只传字符串
+                        }, (response) => {
+                            if (response && response.encryptedMessage) {
+                                encryptedMessage.value = response.encryptedMessage;
+                            }
                         });
                     }
                 }

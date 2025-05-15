@@ -86,8 +86,6 @@
         </div>
 
         <div v-if="keyGenerated" style="margin-top: 20px;">
-            
-
             <button @click="downloadPrivateKey" class="pgp-button">
                 Download Private Key
             </button>

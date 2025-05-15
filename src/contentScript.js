@@ -39,6 +39,7 @@ async function startEncryption(bodyText, armoredPublicKey) {
             encryptionKeys: publicKeyObj
         });
         console.log("the result is ", encrypted);
+        return encrypted;
         //替换compose中原来的内容
         //insertEncryptedText(encrypted);
     } catch (error) {
@@ -58,17 +59,16 @@ function insertEncryptedText(encryptedText) {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startEncryption') {
         let bodyText = getBodyText();
-        startEncryption(bodyText, request.publicKey);
+        //startEncryption是异步函数，返回的是 Promise
+        startEncryption(bodyText, request.publicKey).then(encrypted => {
+            sendResponse({ encryptedMessage: encrypted });
+        });
+        return true;
     }
 
     if (request.action === 'getEncryptedMessage') {
         // 假设加密的邮件内容在页面的某个元素中，例如 class 为 'encrypted-message'
-        //const encryptedElement = getBodyText();
-        let encryptedElement = '';
-        const composeEditor = document.querySelector('div.editable');
-        if (composeEditor) {
-            encryptedElement = composeEditor.innerText;
-        }
+        const encryptedElement = getBodyText();
         console.log("The element is ", encryptedElement);
         if (encryptedElement && encryptedElement.startsWith('-----BEGIN PGP MESSAGE-----')) {
             sendResponse({ encryptedMessage: encryptedElement });
