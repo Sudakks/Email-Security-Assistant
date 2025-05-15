@@ -32,18 +32,18 @@ function PGPEncryption() {
         const message = await openpgp.readMessage({ armoredMessage: encrypted });
         const { data: decrypted, signatures } = await openpgp.decrypt({
             message,
-            verificationKeys: publicKeyObj,
+            //verificationKeys: publicKeyObj,
             decryptionKeys: privateKeyObj
         });
         console.log(decrypted);
 
         // ÑéÖ¤Ç©Ãû
-        try {
+        /*try {
             await signatures[0].verified;
             console.log('Signature is valid');
         } catch (e) {
             throw new Error('Signature could not be verified: ' + e.message);
-        }
+        }*/
     })();
 }
 //generate();

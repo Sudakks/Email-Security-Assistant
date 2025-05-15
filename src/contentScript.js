@@ -28,11 +28,7 @@ let cachedMatchedKeywords = [];
 
 async function startEncryption(bodyText, armoredPublicKey) {
     try {
-        //console.log("get text is " + bodyText);
-        //console.log("get public key is " + armoredPublicKey);
-
-        // ✅ 检查公钥是否完整
-        alert("the key word is " + armoredPublicKey);
+        // 检查公钥是否完整
         if (!armoredPublicKey.startsWith('-----BEGIN PGP PUBLIC KEY BLOCK-----')) {
             throw new Error('Error with publicKey format');
         }
@@ -42,20 +38,43 @@ async function startEncryption(bodyText, armoredPublicKey) {
             message: await openpgp.createMessage({ text: bodyText }),
             encryptionKeys: publicKeyObj
         });
-
-        alert("Successully");
-        console.log(encrypted);
+        console.log("the result is ", encrypted);
+        //替换compose中原来的内容
+        //insertEncryptedText(encrypted);
     } catch (error) {
         console.error('Fail to encrpyt: ', error);
         alert('Fail to encrpyt: ' + error.message);
+    }
+}
+function insertEncryptedText(encryptedText) {
+    const composeEditor = document.querySelector('div.editable');
+    if (composeEditor) {
+        composeEditor.textContent = '\n' + encryptedText + '\n';
+    } else {
+        alert("Compose editor not found.");
     }
 }
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
     if (request.action === 'startEncryption') {
         let bodyText = getBodyText();
-        //alert("get text is " + request.publicKey);
         startEncryption(bodyText, request.publicKey);
+    }
+
+    if (request.action === 'getEncryptedMessage') {
+        // 假设加密的邮件内容在页面的某个元素中，例如 class 为 'encrypted-message'
+        //const encryptedElement = getBodyText();
+        let encryptedElement = '';
+        const composeEditor = document.querySelector('div.editable');
+        if (composeEditor) {
+            encryptedElement = composeEditor.innerText;
+        }
+        console.log("The element is ", encryptedElement);
+        if (encryptedElement && encryptedElement.startsWith('-----BEGIN PGP MESSAGE-----')) {
+            sendResponse({ encryptedMessage: encryptedElement });
+        } else {
+            sendResponse({ encryptedMessage: null });
+        }
     }
 
     if (request.action === 'startDetection') {
@@ -113,7 +132,7 @@ function getBodyText() {
     let bodyText = '';
     const isComposePage = window.location.href.includes('compose=');
     if (isComposePage) {
-        originalHTML = document.body.innerHTML;
+        //originalHTML = document.body.innerHTML;
         //获取compose里面的内容，在div.editable里面
         const composeEditor = document.querySelector('div.editable');
         if (composeEditor) {

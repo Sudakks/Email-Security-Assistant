@@ -34,10 +34,6 @@
     }, { deep: true });
 
 
-    /*watch(myPublicKey, (newMyPublicKey) => {
-        localStorage.setItem('myPublicKey', newMyPublicKey);
-    }, { deep: true });*/
-
     //生成新的密钥
     const generateKeys = async () => {
         const { privateKey, publicKey, revocationCertificate } = await openpgp.generateKey({

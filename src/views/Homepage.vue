@@ -1,8 +1,16 @@
 ﻿<template>
     <button class="homepageButton" style="background-color: #4CAF50;" @click="sendSignal">Start to detect current email</button>
     <button class="homepageButton" style="background-color: #FF9800;" @click="startEncryption">Encrypt the whole email</button>
-    <button class="homepageButton" style="background-color: #2196F3; " @click="">Decrypt the whole email</button>
+    <div>
+        <!-- 文件上传按钮 -->
+        <input type="file" @change="handlePrivateKeyUpload" accept=".asc,.pgp,.txt" />
+        <button class="homepageButton" style="background-color: #2196F3; " @click="decryptEmail">Decrypt the whole email</button>
+    </div>
     <ThreatsList />
+    <div v-if="decryptedMessage">
+        <h3>Decrypted Message:</h3>
+        <pre>{{ decryptedMessage }}</pre>
+    </div>
     <v-expansion-panels>
         <v-expansion-panel title="Title"
                            text="Lorem ipsum dolor sit amet consectetur adipisicing elit. Commodi, ratione debitis quis est labore voluptatibus! Eaque cupiditate minima">
@@ -32,6 +40,70 @@
     import { provide, ref, watch } from 'vue'
     import axios from 'axios'
     import * as openpgp from 'openpgp';
+
+    //用于存储privateKey和解密后的文件内容
+    const privateKeyArmored = ref('');
+    const decryptedMessage = ref('');
+
+    // 处理私钥文件上传
+    const handlePrivateKeyUpload = async (event) => {
+        const file = event.target.files[0];
+        if (file) {
+            privateKeyArmored.value = await file.text();
+            //privateKeyArmored.value = await openpgp.readPrivateKey({ armoredKey: await file.text() });
+        }
+    };
+
+    const decryptEmail = async () => {
+        if (!privateKeyArmored.value) {
+            alert('Please upload your private key first.');
+            return;
+        }
+        else {
+            console.log("The private value is " + privateKeyArmored.value);
+        }
+
+        chrome.tabs.query({ active: true, currentWindow: true }, async (tabs) => {
+            const tab = tabs[0];
+            const url = tab.url || '';
+
+            const privateKey = await openpgp.readPrivateKey({ armoredKey: privateKeyArmored.value });
+            console.log("the private key is " + privateKey);
+            chrome.scripting.executeScript(
+                {
+                    target: { tabId: tab.id },
+                    files: ['contentScript.js']
+                },
+                () => {
+                    if (chrome.runtime.lastError) {
+                        console.error('contentScript injection failed:', chrome.runtime.lastError.message);
+                    } else {
+                        chrome.tabs.sendMessage(tab.id, { action: 'getEncryptedMessage' }, async (response) => {
+                            if (chrome.runtime.lastError) {
+                                console.error('Message error:', chrome.runtime.lastError.message);
+                            } else {
+                                if (response?.encryptedMessage) {
+                                    console.log('Received Encrypted Message:', response.encryptedMessage);
+                                    const message = await openpgp.readMessage({
+                                        armoredMessage: response.encryptedMessage
+                                    });
+                                    const { data: decrypted } = await openpgp.decrypt({
+                                        message,
+                                        decryptionKeys: privateKey // 或 decryptedKey
+                                    });
+                                    decryptedMessage.value = decrypted;
+                                }
+                                else {
+                                    alert('No encrypted message found on the page.');
+                                }
+                            }
+                        });
+                    }
+                }
+            );
+        });
+    };
+
 
     const threatsList = ref([]);
     const detectedCustomedKeywords = ref([]);
@@ -158,19 +230,6 @@
         }
     }
 
-    /*const startEncryption = async () => {
-        const myPublicKey = localStorage.getItem('myPublicKey');
-        if (!myPublicKey) {
-            alert("No public key found!");
-            return;
-        }
-        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
-            chrome.tabs.sendMessage(tabs[0].id, {
-                action: 'startEncryption',
-                publicKey: myPublicKey, // 只传字符串
-            });
-        });
-    }*/
 
 
     const startEncryption = () => {
