@@ -1,6 +1,7 @@
 ﻿<template>
     <button class="homepageButton" style="background-color: #4CAF50;" @click="sendSignal">Start to detect current email</button>
-    <button class="homepageButton" style="background-color: #FF9800;">Encrypt the whole email</button>
+    <button class="homepageButton" style="background-color: #FF9800;" @click="startEncryption">Encrypt the whole email</button>
+    <button class="homepageButton" style="background-color: #2196F3; " @click="">Decrypt the whole email</button>
     <ThreatsList />
     <v-expansion-panels>
         <v-expansion-panel title="Title"
@@ -30,6 +31,7 @@
     import ThreatsList from "../components/ThreatsList.vue"
     import { provide, ref, watch } from 'vue'
     import axios from 'axios'
+    import * as openpgp from 'openpgp';
 
     const threatsList = ref([]);
     const detectedCustomedKeywords = ref([]);
@@ -44,6 +46,7 @@
     const saveThreatsList = () => {
         sessionStorage.setItem('matchedThreats', JSON.stringify(threatsList.value));
     };
+
     let itemIdCounter = 0;
     const updateThreatsList = () => {
         threatsList.value = [];
@@ -70,6 +73,8 @@
         /* 手动更新threatsList，而不用监听detectedGPTInfo的方法，因为切换页面的时候会自动清零 */
         saveThreatsList();
     };
+
+    
 
     const sendSignal = () => {
         chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
@@ -153,4 +158,51 @@
         }
     }
 
+    /*const startEncryption = async () => {
+        const myPublicKey = localStorage.getItem('myPublicKey');
+        if (!myPublicKey) {
+            alert("No public key found!");
+            return;
+        }
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            chrome.tabs.sendMessage(tabs[0].id, {
+                action: 'startEncryption',
+                publicKey: myPublicKey, // 只传字符串
+            });
+        });
+    }*/
+
+
+    const startEncryption = () => {
+        chrome.tabs.query({ active: true, currentWindow: true }, (tabs) => {
+            const tab = tabs[0];
+            const url = tab.url || '';
+
+            const myPublicKey = localStorage.getItem('myPublicKey');
+            if (!myPublicKey || !myPublicKey.includes('BEGIN PGP PUBLIC KEY')) {
+                alert("Public Key is invalid or none");
+                return;
+            }
+            else {
+                alert("the valid is " + myPublicKey);
+            }
+
+            chrome.scripting.executeScript(
+                {
+                    target: { tabId: tab.id },
+                    files: ['contentScript.js']
+                },
+                () => {
+                    if (chrome.runtime.lastError) {
+                        console.error('contentScript injection failed:', chrome.runtime.lastError.message);
+                    } else {
+                        chrome.tabs.sendMessage(tab.id, {
+                            action: 'startEncryption',
+                            publicKey: myPublicKey, // 只传字符串
+                        });
+                    }
+                }
+            );
+        });
+    };
 </script>
