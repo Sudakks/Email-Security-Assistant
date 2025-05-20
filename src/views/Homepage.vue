@@ -227,9 +227,9 @@
                     } else {
                         chrome.tabs.sendMessage(tab.id, { action: 'startDetection', keywords }, async (response) => {
                             if (chrome.runtime.lastError) {
-                                console.error('Message erro                                * r:', chrome.runtime.lastError.message);
+                                console.error('Message error:', chrome.runtime.lastError.message);
                             } else {
-                                alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
+                                //alert('✅ the content is  ：' + response.matched.map(k => `${k.keyword}（${k.count} 次）`).join('\n'));
                                 //alert("Text is: " + response.bodyText);
                                 detectedCustomedKeywords.value = response.matched;
                                 detectedGPTInfo.value = await ChatGPTDetection(response.bodyText);
@@ -273,7 +273,7 @@
             return response.data;
         } catch (error) {
             console.error('Detection failed:', error);
-            alert(`检测失败: ${error.response?.data?.error || error.message}`);
+            alert(`Detection error: ${error.response?.data?.error || error.message}`);
             return [];
         }
     }
@@ -291,7 +291,7 @@
                 return;
             }
             else {
-                alert("the valid is " + myPublicKey);
+                //alert("the valid is " + myPublicKey);
             }
 
             chrome.scripting.executeScript(

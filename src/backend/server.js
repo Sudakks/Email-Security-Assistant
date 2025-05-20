@@ -38,8 +38,6 @@ function buildMaskedBodyAndMap(bodyText) {
     let originals = [];
 
     //先识别电话号码
-
-
     //const foundPhones = Array.from(findNumbers(bodyText, 'CN'));
     const foundPhones = Array.from(findNumbers(bodyText, 'CN'))
         .filter(match => {
@@ -84,7 +82,6 @@ function buildMaskedBodyAndMap(bodyText) {
         //全局匹配
         const re = new RegExp(escapeRegExp(orig), 'g');
         maskedBody = maskedBody.replace(re, masked);
-        //console.log("maskedBody is " + maskedBody);
     }
     //console.log("maskedBody is " + maskedBody);
     return { maskedBody, mapMaskedOriginal };

@@ -19,7 +19,7 @@
   "host_permissions": [
     //"http://*/*",
     //"https://*/*",
-    "<all_urls>",
+    //"<all_urls>",
     "https://api.openai.com/*"
   ],
   "background": {

@@ -6,7 +6,7 @@
 
     const selectedAlgorithm = ref('');
     const encryptionOptions = [
-        { label: 'PGP (Pretty Good Privacy)', value: 'PGP' },
+        { label: 'OpenPGP (Pretty Good Privacy)', value: 'PGP' },
         { label: 'S/MIME', value: 'S/MIME' },
         { label: 'TLS', value: 'TLS' }
     ]
